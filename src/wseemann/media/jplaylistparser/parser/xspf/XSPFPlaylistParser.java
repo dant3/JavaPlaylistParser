@@ -50,7 +50,7 @@ public class XSPFPlaylistParser extends AbstractParser {
 	private static int mNumberOfFiles = 0;
 	
     private static final Set<MediaType> SUPPORTED_TYPES =
-    		Collections.singleton(MediaType.video("application/xspf+xml"));
+    		Collections.singleton(MediaType.application("xspf+xml"));
 
     public Set<MediaType> getSupportedTypes() {
     	return SUPPORTED_TYPES;
