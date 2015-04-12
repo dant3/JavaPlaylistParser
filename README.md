@@ -17,6 +17,9 @@ Overview
 
 JavaPlaylistParser is a toolkit for detecting and extracting metadata and structured text content from various documents using existing parser libraries.
 
+Android support: added support for read timeout as it does not throw exception when was parsing stream instead of playlist
+	(ex. http://s3.mediastreaming.it:7100/;stream.nsv/listen.pls is a stream, but contain .pls so it is considered as playlist)
+
 Using JPP in your application
 ------------
 
@@ -44,6 +47,7 @@ License
 JavaPlaylistParser: A toolkit for detecting and extracting metadata and structured text content from various documents using existing parser libraries.
 
 Copyright 2014 William Seemann
+Copyright 2015 V-master
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
