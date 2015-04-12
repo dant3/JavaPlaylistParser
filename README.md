@@ -1,12 +1,12 @@
 JavaPlaylistParser
 ============================
 
-View the project page <a href=http://wseemann.github.io/JavaPlaylistParser/>here</a>.
+Origin project page <a href="https://github.com/wseemann/JavaPlaylistParser">here</a>.
 
 Donate
 ------------
 
-Donations can be made via PayPal:
+Donations to origin project can be made via PayPal:
 
 <a href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=4KK2RERB2VKL8" alt="PayPal - The safer, easier way to pay online!">
   <img src="https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif">
