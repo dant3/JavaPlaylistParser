@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Set;
 
 import wseemann.media.jplaylistparser.exception.JPlaylistParserException;
+import wseemann.media.jplaylistparser.exception.JPlaylistReadTimeoutException;
 import wseemann.media.jplaylistparser.mime.MediaType;
 import wseemann.media.jplaylistparser.parser.AbstractParser;
 import wseemann.media.jplaylistparser.playlist.Playlist;
@@ -59,23 +60,32 @@ public class XSPFPlaylistParser extends AbstractParser {
 	/**
 	 * Retrieves the files listed in a .asx file
 	 * @throws IOException 
+	 * @throws JPlaylistReadTimeoutException 
 	 */
-    private void parsePlaylist(InputStream stream, Playlist playlist) throws IOException {
+    private void parsePlaylist(InputStream stream, Playlist playlist, int readTimeout) throws IOException, JPlaylistReadTimeoutException {
 		String xml = "";
         String line = null;
         BufferedReader reader = null;
         
 		// Start the query
         reader = new BufferedReader(new InputStreamReader(stream));
-		    
+        
+        long startTime = System.currentTimeMillis(), endTime = 0;
+        if(readTimeout > 0) {
+        	endTime = startTime+readTimeout;
+        }
+        
 		while ((line = reader.readLine()) != null) {
+		    if(endTime != 0 && endTime < System.currentTimeMillis()) {
+		    	throw new JPlaylistReadTimeoutException();
+		    }
 		    xml = xml + line; 
         }
 		    
-		parseXML(xml, playlist);
+		parseXML(xml, playlist, readTimeout);
     }
 
-	private void parseXML(String xml, Playlist playlist) {
+	private void parseXML(String xml, Playlist playlist, int readTimeout) {
 		SAXBuilder builder = new SAXBuilder();
 	    Reader in;
 	    Document doc = null;
@@ -99,7 +109,7 @@ public class XSPFPlaylistParser extends AbstractParser {
 	        		
 	        	    	if (attributeName.equalsIgnoreCase(TRACK_ELEMENT)) {
 	        	    		List<Element> children3 = castList(Element.class, children2.get(j).getChildren());
-	        	    		buildPlaylistEntry(children3, playlist);
+	        	    		buildPlaylistEntry(children3, playlist, readTimeout);
 	        	    	}
 	    			}
 	    		}
@@ -110,7 +120,7 @@ public class XSPFPlaylistParser extends AbstractParser {
 	    }
 	}
     
-    private void buildPlaylistEntry(List<Element> children, Playlist playlist) {
+    private void buildPlaylistEntry(List<Element> children, Playlist playlist, int readTimeout) {
     	PlaylistEntry playlistEntry = new PlaylistEntry();
     	
     	for(int i = 0; i < children.size(); i++) {
@@ -132,7 +142,7 @@ public class XSPFPlaylistParser extends AbstractParser {
     	
     	mNumberOfFiles = mNumberOfFiles + 1;
     	playlistEntry.set(PlaylistEntry.TRACK, String.valueOf(mNumberOfFiles));
-    	parseEntry(playlistEntry, playlist);
+    	parseEntry(playlistEntry, playlist, readTimeout);
     }
     
     private <T> List<T> castList(Class<? extends T> castClass, List<?> c) {
@@ -146,9 +156,9 @@ public class XSPFPlaylistParser extends AbstractParser {
     }
 
 	@Override
-	public void parse(String uri, InputStream stream, Playlist playlist)
-			throws IOException, SAXException, JPlaylistParserException{
-		parsePlaylist(stream, playlist);
+	public void parse(String uri, InputStream stream, Playlist playlist, int readTimeout)
+			throws IOException, SAXException, JPlaylistParserException {
+		parsePlaylist(stream, playlist, readTimeout);
 	}
 }
 

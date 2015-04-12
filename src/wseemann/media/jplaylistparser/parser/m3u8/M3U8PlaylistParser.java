@@ -28,6 +28,7 @@ import java.util.Set;
 import org.xml.sax.SAXException;
 
 import wseemann.media.jplaylistparser.exception.JPlaylistParserException;
+import wseemann.media.jplaylistparser.exception.JPlaylistReadTimeoutException;
 import wseemann.media.jplaylistparser.mime.MediaType;
 import wseemann.media.jplaylistparser.parser.AbstractParser;
 import wseemann.media.jplaylistparser.playlist.Playlist;
@@ -57,7 +58,7 @@ public class M3U8PlaylistParser extends AbstractParser {
 	 * @throws IOException 
 	 * @throws JPlaylistParserException 
 	 */
-    private void parsePlaylist(String uri, InputStream stream, Playlist playlist) throws IOException, JPlaylistParserException {
+    private void parsePlaylist(String uri, InputStream stream, Playlist playlist, int readTimeout) throws IOException, JPlaylistParserException {
         String line = null;
         BufferedReader reader = null;
         PlaylistEntry playlistEntry = null;
@@ -66,8 +67,16 @@ public class M3U8PlaylistParser extends AbstractParser {
         
 		// Start the query
 		reader = new BufferedReader(new InputStreamReader(stream));
+
+        long startTime = System.currentTimeMillis(), endTime = 0;
+        if(readTimeout > 0) {
+        	endTime = startTime+readTimeout;
+        }
         
 		while ((line = reader.readLine()) != null) {
+		    if(endTime != 0 && endTime < System.currentTimeMillis()) {
+		    	throw new JPlaylistReadTimeoutException();
+		    }
 			if (!(line.equalsIgnoreCase(EXTENDED_INFO_TAG) ||
 					line.matches(INFO_TAG) ||
 					line.trim().equals(""))) {
@@ -81,16 +90,16 @@ public class M3U8PlaylistParser extends AbstractParser {
 		    		}
 		    		
 		    		playlistEntry.set(PlaylistEntry.URI, generateUri(line.trim(), host));
-		    		savePlaylistFile(playlistEntry, playlist);
+		    		savePlaylistFile(playlistEntry, playlist, readTimeout);
 		    	}
 		    }           
         }
     }
 
-    private void savePlaylistFile(PlaylistEntry playlistEntry, Playlist playlist) {
+    private void savePlaylistFile(PlaylistEntry playlistEntry, Playlist playlist, int readTimeout) {
     	mNumberOfFiles = mNumberOfFiles + 1;
     	playlistEntry.set(PlaylistEntry.TRACK, String.valueOf(mNumberOfFiles));
-    	parseEntry(playlistEntry, playlist);
+    	parseEntry(playlistEntry, playlist, readTimeout);
     	processingEntry = false;
     }
 
@@ -125,9 +134,9 @@ public class M3U8PlaylistParser extends AbstractParser {
     }
     
 	@Override
-	public void parse(String uri, InputStream stream, Playlist playlist)
+	public void parse(String uri, InputStream stream, Playlist playlist, int readTimeout)
 			throws IOException, SAXException, JPlaylistParserException {
-		parsePlaylist(uri, stream, playlist);
+		parsePlaylist(uri, stream, playlist, readTimeout);
 	}
 }
 

@@ -23,6 +23,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLDecoder;
 
+import wseemann.media.jplaylistparser.JPlaylistParserConfigs;
 import wseemann.media.jplaylistparser.exception.JPlaylistParserException;
 import wseemann.media.jplaylistparser.mime.MediaType;
 import wseemann.media.jplaylistparser.parser.asx.ASXPlaylistParser;
@@ -41,6 +42,16 @@ public class AutoDetectParser {
     		String mimeType,
             InputStream stream,
             Playlist playlist)
+            throws IOException, SAXException, JPlaylistParserException {
+    	parse(uri, mimeType, stream, playlist, 0);
+    }
+    
+    public void parse(
+    		String uri,
+    		String mimeType,
+            InputStream stream,
+            Playlist playlist,
+            int readTimeout)
             throws IOException, SAXException, JPlaylistParserException {
     	Parser parser = null;
     	String extension = null;
@@ -89,12 +100,20 @@ public class AutoDetectParser {
 			throw new JPlaylistParserException("Unsupported format");
 		}
 		
-		parser.parse(uri, stream, playlist);
+		parser.parse(uri, stream, playlist, readTimeout);
     }
-
+    
     public void parse(
     		String uri,
             Playlist playlist)
+            throws IOException, SAXException, JPlaylistParserException {
+    	parse(uri, playlist, 0);
+    }
+    
+    public void parse(
+    		String uri,
+            Playlist playlist,
+            int readTimeout)
             throws IOException, SAXException, JPlaylistParserException {
     	Parser parser = null;
     	String extension = null;
@@ -133,13 +152,13 @@ public class AutoDetectParser {
 		try {
 			url = new URL(URLDecoder.decode(uri, "UTF-8"));
 			conn = (HttpURLConnection) url.openConnection();        	
-			conn.setConnectTimeout(6000);
-			conn.setReadTimeout(6000);
+			conn.setConnectTimeout(JPlaylistParserConfigs.CONNECTION_CONNECT_TIMEOUT);
+			conn.setReadTimeout(JPlaylistParserConfigs.CONNECTION_READ_TIMEOUT);
 			conn.setRequestMethod("GET");
     		
 			is = conn.getInputStream();
 			
-		    parser.parse(url.toString(), is, playlist);
+		    parser.parse(url.toString(), is, playlist, readTimeout);
 		} catch (MalformedURLException e) {
 			e.printStackTrace();
 		} catch (IOException e) {

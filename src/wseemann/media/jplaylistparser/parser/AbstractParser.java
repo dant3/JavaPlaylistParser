@@ -26,10 +26,10 @@ import wseemann.media.jplaylistparser.playlist.PlaylistEntry;
 
 public abstract class AbstractParser implements Parser {
 
-	protected void parseEntry(PlaylistEntry playlistEntry, Playlist playlist) {
+	protected void parseEntry(PlaylistEntry playlistEntry, Playlist playlist, int readTimeout) {
 		try {
 			AutoDetectParser parser = new AutoDetectParser(); // Should auto-detect!
-		    parser.parse(playlistEntry.get(PlaylistEntry.URI), playlist);
+		    parser.parse(playlistEntry.get(PlaylistEntry.URI), playlist, readTimeout);
 		    return;
 		} catch (IOException e) {
 		} catch (SAXException e) {

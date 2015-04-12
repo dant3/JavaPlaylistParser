@@ -30,7 +30,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
+import wseemann.media.jplaylistparser.JPlaylistParserConfigs;
 import wseemann.media.jplaylistparser.exception.JPlaylistParserException;
+import wseemann.media.jplaylistparser.exception.JPlaylistReadTimeoutException;
 import wseemann.media.jplaylistparser.mime.MediaType;
 import wseemann.media.jplaylistparser.parser.AbstractParser;
 import wseemann.media.jplaylistparser.parser.AutoDetectParser;
@@ -79,20 +81,29 @@ public class ASXPlaylistParser extends AbstractParser {
 	/**
 	 * Retrieves the files listed in a .asx file
 	 * @throws IOException 
+	 * @throws JPlaylistReadTimeoutException 
 	 */
-    private void parsePlaylist(InputStream stream, Playlist playlist) throws IOException {
+    private void parsePlaylist(InputStream stream, Playlist playlist, int readTimeout) throws IOException, JPlaylistReadTimeoutException {
 		String xml = "";
         String line = null;
         BufferedReader reader = null;
         
 		// Start the query
         reader = new BufferedReader(new InputStreamReader(stream));
-		    
+
+        long startTime = System.currentTimeMillis(), endTime = 0;
+        if(readTimeout > 0) {
+        	endTime = startTime+readTimeout;
+        }
+        
 		while ((line = reader.readLine()) != null) {
+		    if(endTime != 0 && endTime < System.currentTimeMillis()) {
+		    	throw new JPlaylistReadTimeoutException();
+		    }
 		    xml = xml + line; 
         }
 		    
-		parseXML(xml, playlist);
+		parseXML(xml, playlist, readTimeout);
     }
 
     private String validateXML(String xml, SAXBuilder builder) throws JDOMException, IOException {
@@ -123,7 +134,7 @@ public class ASXPlaylistParser extends AbstractParser {
 		return xml;
     }
     
-	private void parseXML(String xml, Playlist playlist) {
+	private void parseXML(String xml, Playlist playlist, int readTimeout) {
 		SAXBuilder builder = new SAXBuilder();
 	    Reader in;
 	    Document doc = null;
@@ -143,7 +154,7 @@ public class ASXPlaylistParser extends AbstractParser {
 	    		if (tag != null && tag.equalsIgnoreCase(ENTRY_ELEMENT)) {
 	    			List<Element> children2 = castList(Element.class, children.get(i).getChildren());
 	    			
-	    			buildPlaylistEntry(children2, playlist);
+	    			buildPlaylistEntry(children2, playlist, readTimeout);
 	    		} else if (tag != null && tag.equalsIgnoreCase(ENTRYREF_ELEMENT)) {
 	    			URL url;
 	    			HttpURLConnection conn = null;
@@ -161,16 +172,16 @@ public class ASXPlaylistParser extends AbstractParser {
 	    				}
 	    	    	
 	    				url = new URL(href);
-	    				conn = (HttpURLConnection) url.openConnection();        	
-	    				conn.setConnectTimeout(6000);
-	    				conn.setReadTimeout(6000);
+	    				conn = (HttpURLConnection) url.openConnection();               	
+	    				conn.setConnectTimeout(JPlaylistParserConfigs.CONNECTION_CONNECT_TIMEOUT);
+	    				conn.setReadTimeout(JPlaylistParserConfigs.CONNECTION_READ_TIMEOUT);
 	    				conn.setRequestMethod("GET");
 	        		
 	    				String contentType = conn.getContentType();
 	    				is = conn.getInputStream();
 	    			
 	    				AutoDetectParser parser = new AutoDetectParser();
-	    				parser.parse(url.toString(), contentType, is, playlist);
+	    				parser.parse(url.toString(), contentType, is, playlist, readTimeout);
 	    			} catch (MalformedURLException e) {
 	    			} catch (IOException e) {
 	    			} finally {
@@ -193,7 +204,7 @@ public class ASXPlaylistParser extends AbstractParser {
 	    }
 	}
     
-    private void buildPlaylistEntry(List<Element> children, Playlist playlist) {
+    private void buildPlaylistEntry(List<Element> children, Playlist playlist, int readTimeout) {
     	PlaylistEntry playlistEntry = new PlaylistEntry();
     	
     	for(int i = 0; i < children.size(); i++) {
@@ -238,7 +249,7 @@ public class ASXPlaylistParser extends AbstractParser {
     	
     	mNumberOfFiles = mNumberOfFiles + 1;
     	playlistEntry.set(PlaylistEntry.TRACK, String.valueOf(mNumberOfFiles));
-    	parseEntry(playlistEntry, playlist);
+    	parseEntry(playlistEntry, playlist, readTimeout);
     }
     
     private <T> List<T> castList(Class<? extends T> castClass, List<?> c) {
@@ -252,9 +263,9 @@ public class ASXPlaylistParser extends AbstractParser {
     }
 
 	@Override
-	public void parse(String uri, InputStream stream, Playlist playlist)
+	public void parse(String uri, InputStream stream, Playlist playlist, int readTimeout)
 			throws IOException, SAXException, JPlaylistParserException{
-		parsePlaylist(stream, playlist);
+		parsePlaylist(stream, playlist, readTimeout);
 	}
 }
 

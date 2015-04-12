@@ -26,6 +26,7 @@ import java.util.Set;
 import org.xml.sax.SAXException;
 
 import wseemann.media.jplaylistparser.exception.JPlaylistParserException;
+import wseemann.media.jplaylistparser.exception.JPlaylistReadTimeoutException;
 import wseemann.media.jplaylistparser.mime.MediaType;
 import wseemann.media.jplaylistparser.parser.AbstractParser;
 import wseemann.media.jplaylistparser.playlist.Playlist;
@@ -47,8 +48,9 @@ public class PLSPlaylistParser extends AbstractParser {
 	/**
 	 * Retrieves the files listed in a .pls file
 	 * @throws IOException 
+	 * @throws JPlaylistReadTimeoutException 
 	 */
-    private void parsePlaylist(InputStream stream, Playlist playlist) throws IOException {
+    private void parsePlaylist(InputStream stream, Playlist playlist, int readTimeout) throws IOException, JPlaylistReadTimeoutException {
         String line = null;
         BufferedReader reader = null;
         PlaylistEntry playlistEntry = null;
@@ -57,11 +59,19 @@ public class PLSPlaylistParser extends AbstractParser {
 		    
 		playlistEntry = new PlaylistEntry();
 		processingEntry = false;
-		    
+
+        long startTime = System.currentTimeMillis(), endTime = 0;
+        if(readTimeout > 0) {
+        	endTime = startTime+readTimeout;
+        }
+        
 		while ((line = reader.readLine()) != null) {
+		    if(endTime != 0 && endTime < System.currentTimeMillis()) {
+		    	throw new JPlaylistReadTimeoutException();
+		    }
 			if (line.trim().equals("")) {
 		    	if (processingEntry) {
-		    		savePlaylistFile(playlistEntry, playlist);
+		    		savePlaylistFile(playlistEntry, playlist, readTimeout);
 		    	}
 		    		
 		    	playlistEntry = new PlaylistEntry();
@@ -84,7 +94,7 @@ public class PLSPlaylistParser extends AbstractParser {
     		        	playlistEntry.set(PlaylistEntry.PLAYLIST_METADATA, parsedLine[1].trim());
                     } else if (parsedLine[0].trim().contains("Length")) {
         		    	if (processingEntry) {
-        		    		savePlaylistFile(playlistEntry, playlist);
+        		    		savePlaylistFile(playlistEntry, playlist, readTimeout);
         		    	}
         		    		
         		    	playlistEntry = new PlaylistEntry();
@@ -100,21 +110,21 @@ public class PLSPlaylistParser extends AbstractParser {
 		// TitleX:
 		// LengthX:
         if (processingEntry) {
-            savePlaylistFile(playlistEntry, playlist);
+            savePlaylistFile(playlistEntry, playlist, readTimeout);
         }
     }
     
-    private void savePlaylistFile(PlaylistEntry playlistEntry, Playlist playlist) {
+    private void savePlaylistFile(PlaylistEntry playlistEntry, Playlist playlist, int readTimeout) {
     	mNumberOfFiles = mNumberOfFiles + 1;
     	playlistEntry.set(PlaylistEntry.TRACK, String.valueOf(mNumberOfFiles));
-    	parseEntry(playlistEntry, playlist);
+    	parseEntry(playlistEntry, playlist, readTimeout);
     	processingEntry = false;
     }
 
 	@Override
-	public void parse(String uri, InputStream stream, Playlist playlist)
+	public void parse(String uri, InputStream stream, Playlist playlist, int readTimeout)
 			throws IOException, SAXException, JPlaylistParserException {
-		parsePlaylist(stream, playlist);
+		parsePlaylist(stream, playlist, readTimeout);
 	}
 }
 

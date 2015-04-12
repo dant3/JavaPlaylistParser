@@ -31,7 +31,7 @@ public interface Parser {
     Set<MediaType> getSupportedTypes();
 
     void parse(
-            String uri, InputStream stream, Playlist playlist)
+            String uri, InputStream stream, Playlist playlist, int readTimeout)
             throws IOException, SAXException, JPlaylistParserException;
 
 }
