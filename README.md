@@ -28,12 +28,13 @@ Extract and copy the following JAR file and prebuilt native libraries into your 
 Installation
 ------------
 
-### Ant
+### Gradle
 
-Java Playlist Parser is based on Java 6 and uses the Apache Ant <http://ant.apache.org/>
-build system. To build Java Playlist sParser, use the following command in this directory:
+Java Playlist Parser is based on Java 6.
 
-    ant jar
+* thin version cmd: gradle jar
+
+* fatjar version cmd : gradle shadowJar
 
 Usage
 ------------
