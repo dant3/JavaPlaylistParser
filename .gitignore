@@ -1,1 +1,5 @@
-/bin/
+/.idea/
+/.iws
+/.gradle/
+/build/
+/gradle/
