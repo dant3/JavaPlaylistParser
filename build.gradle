@@ -1,0 +1,46 @@
+buildscript {
+    repositories { jcenter() }
+    dependencies {
+        classpath 'com.github.jengelman.gradle.plugins:shadow:1.2.4'
+    }
+}
+
+apply plugin: 'java'
+apply plugin: 'com.github.johnrengelman.shadow'
+
+description = 'Java Playlist Parser'
+version = '0.9.0'
+
+archivesBaseName = 'jplaylistparser'
+sourceCompatibility = 1.6
+targetCompatibility = 1.6
+compileJava.options.encoding = 'UTF-8'
+
+repositories {
+    jcenter()
+}
+
+sourceSets {
+    main {
+        java {
+            srcDirs = ["src"]
+        }
+    }
+}
+
+dependencies {
+    compile group: 'org.jdom', name: 'jdom2', version: '2.0.6'
+}
+
+tasks.withType(Jar) {
+    from(project.projectDir) {
+        include 'LICENSE-2.0.txt'
+        into 'META-INF'
+    }
+}
+
+task showMeCache {
+    doLast {
+        configurations.compile.each { println it }
+    }
+}
